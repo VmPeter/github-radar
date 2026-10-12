@@ -1,11 +1,12 @@
 # GitHub Radar
 
-A GoCD-inspired dashboard for personal use. Two views, switchable from the header:
+A GoCD-inspired dashboard for personal use. Three views, switchable from the header:
 
 - **Pull requests** — open PRs across a fixed list of repos, grouped by repo, with per-PR status (CI checks, review decision, mergeability).
+- **Epics** — PRs across repositories grouped by their Jira epic, with ticket links and CI/review summaries.
 - **Pipelines** — recent GitHub Actions workflow runs across repos, so you can see at a glance which changes are deployed to PROD and which are still **awaiting deployment** or **running**.
 
-Fully static React + TypeScript SPA. Talks directly to the GitHub GraphQL + REST APIs from the browser using a personal access token stored in `localStorage`. The monitored repos/pipelines are configured per browser and also stored in `localStorage`, so different users can run their own setup independently. No backend.
+React + TypeScript SPA. Talks directly to the GitHub GraphQL + REST APIs from the browser using a personal access token stored in `localStorage`. The monitored repos/pipelines are configured per browser and also stored in `localStorage`. The optional Epics view uses a local Jira service included in the Vite development and preview servers.
 
 ## Setup
 
@@ -23,11 +24,20 @@ Use a **fine-grained PAT** scoped to only the repos in your configuration. Repos
 - `Contents: Read`
 - `Pull requests: Read`
 - `Actions: Read` (for the Pipelines view)
+- `Commit statuses: Read` (for PR CI status)
 - `Metadata: Read` (implicit)
 
 Create one at [github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new).
 
 > The token lives in this browser's `localStorage`. That makes it readable by any XSS on this origin. Personal use only.
+
+## Jira epics
+
+Open **Epics → Connect Jira** and enter your Jira site URL. Jira Cloud uses your Atlassian email and an API token **without scopes**; Jira Data Center / Server uses a **Personal Access Token created in that Jira site's profile**, without an email. Automatic detection checks custom domains using Jira's server information, including Cloud aliases such as `https://jira.prod.vipps.io` → `https://vipps.atlassian.net`. Connection type can also be changed manually. Data Center context paths such as `/jira` are supported. The local service validates the connection and stores credentials in `.local/jira.json` with owner-only file permissions. This directory is ignored by Git and blocked from Vite file serving. Disconnect deletes the saved credentials. No Jira issues are changed.
+
+Radar extracts issue keys from each PR's title, branch and description, follows Jira parents (including subtask → task → epic), and supports legacy Epic Link fields. PRs from all configured repositories appear under their epic, with Jira links, epic status, and CI/review summaries. A PR referencing multiple epics appears in each group. PRs with no issue, no epic, or failed lookups remain visible separately. Groups can be sorted by epic key, name, or latest PR activity. The existing PR filters still apply.
+
+Lookups are cached locally for five minutes. **Refresh** reloads PRs and Jira mappings; **Retry Jira** retries unavailable issues. Jira Cloud scoped tokens are not supported. Data Center uses REST API v2 and bearer tokens; Cloud uses REST API v3 and email/token authentication. Run with `npm run dev` or `npm run preview`; a standalone static deployment cannot resolve Jira epics.
 
 ## Configuring repos
 
