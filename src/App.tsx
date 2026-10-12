@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Header, type RadarView } from "./components/Header";
 import { Dashboard } from "./components/Dashboard";
 import { Pipelines } from "./components/Pipelines";
+import { Epics } from './components/Epics';
 import { FilterBar } from "./components/FilterBar";
 import { PipelineFilterBar } from "./components/PipelineFilterBar";
 import { TokenGate } from "./components/TokenGate";
@@ -71,7 +72,7 @@ export function App() {
         onOpenConfig={() => setConfigOpen(true)}
       />
       <main className="mx-auto w-full flex-1 px-4 py-6 space-y-6">
-        {view === "prs" ? (
+        {view !== "pipelines" ? (
           <FilterBar
             filters={filters}
             onChange={setFilters}
@@ -86,7 +87,7 @@ export function App() {
         )}
 
         {token ? (
-          view === "prs" ? (
+          view === "epics" ? <Epics filters={filters} viewer={viewer} onSummaryChange={handleSummary} refreshSignal={refreshSignal} /> : view === "prs" ? (
             <Dashboard
               filters={filters}
               viewer={viewer}
@@ -104,7 +105,7 @@ export function App() {
         ) : (
           <div className="text-center py-20 text-sm text-slate-500 dark:text-slate-400">
             Connect a GitHub personal access token to load{" "}
-            {view === "prs" ? "pull requests" : "pipelines"}.
+            {view !== "pipelines" ? "pull requests" : "pipelines"}.
           </div>
         )}
       </main>

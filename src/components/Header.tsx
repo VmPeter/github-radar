@@ -3,7 +3,7 @@ import { Settings, Radar, GitPullRequest, Rocket, SlidersHorizontal } from "luci
 import { useEffect, useState, type ReactNode } from "react";
 import { RefreshControl } from "./RefreshControl";
 
-export type RadarView = "prs" | "pipelines";
+export type RadarView = "prs" | "epics" | "pipelines";
 
 interface HeaderProps {
   view: RadarView;
@@ -76,6 +76,7 @@ export function Header({
         </div>
 
         <nav className="ml-2 flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-800 dark:bg-slate-900">
+          <NavTab active={view === 'epics'} onClick={() => onViewChange('epics')} icon={<GitPullRequest className="h-3.5 w-3.5" />} label="Epics" />
           <NavTab
             active={view === "prs"}
             onClick={() => onViewChange("prs")}
