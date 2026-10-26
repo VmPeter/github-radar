@@ -15,7 +15,7 @@ import {
 
 const prDefaults = {
   search: "", hideDrafts: false, onlyMine: false,
-  failingOnly: false, needsReview: false,
+  failingOnly: false, needsReview: false, canReview: false,
 };
 const pipelineDefaults = {
   search: "", pendingProdOnly: false, failingOnly: false,
@@ -33,7 +33,7 @@ test("both views retain every field independently across reads", () => {
   const storage = memoryStorage();
   const prs = {
     search: "author feature #42", hideDrafts: true, onlyMine: true,
-    failingOnly: true, needsReview: true,
+    failingOnly: true, needsReview: true, canReview: true,
   };
   const pipelines = {
     search: "branch abc123", pendingProdOnly: true, failingOnly: true,
@@ -103,4 +103,13 @@ test("every existing saved interval including Off retains its menu choice", () =
     assert.equal(readRefreshInterval(storage), option.ms);
     assert.deepEqual(refreshOption(readRefreshInterval(storage)), option);
   }
+});
+
+
+test("old personal review selections migrate to Can review without overriding the new setting", () => {
+  const storage = memoryStorage();
+  storage.setItem(FILTERS_STORAGE_KEY, JSON.stringify({ needsYourReview: true }));
+  assert.equal(readFilterPreferences(FILTERS_STORAGE_KEY, prDefaults, storage).canReview, true);
+  storage.setItem(FILTERS_STORAGE_KEY, JSON.stringify({ needsYourReview: true, canReview: false }));
+  assert.equal(readFilterPreferences(FILTERS_STORAGE_KEY, prDefaults, storage).canReview, false);
 });

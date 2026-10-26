@@ -64,6 +64,13 @@ export function PrCard({ pr, owner, name }: PrCardProps) {
                 Draft
               </span>
             )}
+            {!pr.isDraft && pr.reviewEligibility?.canReview && (
+              <span className="pill bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                title={pr.reviewEligibility.reason}>
+                {pr.reviewEligibility.reason === 'Requested from you' ? 'Requested from you' : 'Can review'}
+              </span>
+            )}
+            {pr.reviewEligibility?.unknown && <span className="pill bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400" title="Unable to confirm whether your approval would help meet the remaining requirements. Open the PR to check.">Eligibility unknown</span>}
           </div>
         </div>
       </header>

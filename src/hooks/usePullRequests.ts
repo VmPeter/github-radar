@@ -1,11 +1,12 @@
 import { useMemo, useRef } from 'react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
-import { fetchPullRequestCounts, fetchPullRequestPage, type PullRequestNode, type RepoPullRequests } from '../lib/github';
+import { fetchPullRequestCounts, fetchPullRequestPage, fetchViewerReviewRequests, type PullRequestNode, type RepoPullRequests } from '../lib/github';
 import { useToken } from '../lib/token';
 import { useRefreshInterval } from '../lib/refreshInterval';
 import { repoKey, type Repo } from '../config/schema';
 import { createPagedLoad, mergeNodes, type LoadProgress, type RollingTarget } from '../lib/rollingRefresh';
 import { useRollingRefresh, useAuthScope } from './useRollingRefresh';
+import { createReviewEligibilityLoader } from '../lib/githubReviewEligibility';
 
 export interface RadarQuery<T> {
   data?: T;
@@ -43,9 +44,15 @@ export function useAllPullRequests(repos: Repo[], disabledKeys?: ReadonlySet<str
       const summary = { nameWithOwner: repoKey(d.repo), url: `https://github.com/${repoKey(d.repo)}` };
       let overflow = Boolean(d.members && count !== undefined && count > 1000);
       let restartCursor = false;
+      let reviewRequests: Set<string> | null | undefined;
+      const loadEligibility = createReviewEligibilityLoader(token!);
       const authors = new Set(d.members?.map(m => m.toLowerCase()));
       const step = createPagedLoad<PullRequestNode>(
         async (cursor, signal, initial) => {
+          if (reviewRequests === undefined) {
+            try { reviewRequests = await fetchViewerReviewRequests(d.repo.owner, d.repo.name, token!, signal, initial); }
+            catch { signal.throwIfAborted(); reviewRequests = null; }
+          }
           let page = await fetchPullRequestPage(d.repo.owner, d.repo.name, restartCursor ? null : cursor, overflow ? undefined : d.members, token ?? undefined, signal, initial);
           if (!overflow && d.members && page.totalCount > 1000) {
             overflow = true; restartCursor = true;
@@ -53,7 +60,7 @@ export function useAllPullRequests(repos: Repo[], disabledKeys?: ReadonlySet<str
           }
           const restart = restartCursor;
           restartCursor = false;
-          return { ...page, restart };
+          return { ...page, nodes: await loadEligibility(d.repo.owner, d.repo.name, page.nodes, reviewRequests, signal, initial), restart };
         },
         node => !overflow || Boolean(node.author && authors.has(node.author.login.toLowerCase())), count,
       );

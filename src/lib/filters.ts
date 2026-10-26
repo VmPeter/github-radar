@@ -1,5 +1,5 @@
-import type { PullRequestNode } from "./github";
-import { deriveStatus } from "./status";
+import type { PullRequestNode } from "./github.ts";
+import { deriveStatus } from "./status.ts";
 
 export interface Filters {
   search: string;
@@ -7,6 +7,7 @@ export interface Filters {
   onlyMine: boolean;
   failingOnly: boolean;
   needsReview: boolean;
+  canReview: boolean;
 }
 
 export const defaultFilters: Filters = {
@@ -15,6 +16,7 @@ export const defaultFilters: Filters = {
   onlyMine: false,
   failingOnly: false,
   needsReview: false,
+  canReview: false,
 };
 
 export function matchesFilters(
@@ -36,6 +38,10 @@ export function matchesFilters(
   if (filters.needsReview) {
     if (pr.isDraft) return false;
     if (pr.reviewDecision !== "REVIEW_REQUIRED") return false;
+  }
+  if (filters.canReview) {
+    if (!viewer || pr.isDraft || pr.author?.login.toLowerCase() === viewer.toLowerCase()) return false;
+    if (pr.reviewEligibility?.canReview !== true) return false;
   }
   if (filters.search.trim().length > 0) {
     const q = filters.search.trim().toLowerCase();

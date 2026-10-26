@@ -17,7 +17,8 @@ export function readFilterPreferences<T extends object>(
       return filters;
     }
     for (const field of Object.keys(defaults) as (keyof T)[]) {
-      const value = (saved as Record<keyof T, unknown>)[field];
+      const record = saved as Record<string, unknown>;
+      const value = field === 'canReview' && record.canReview === undefined ? record.needsYourReview : record[field as string];
       if (typeof value === typeof defaults[field]) {
         filters[field] = value as T[keyof T];
       }

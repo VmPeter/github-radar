@@ -9,6 +9,7 @@ import { deriveStatus } from '../lib/status';
 import { useRefreshInterval } from '../lib/refreshInterval';
 import { JiraSettings } from './JiraSettings';
 import { PrCard } from './PrCard';
+import { ReviewEligibilityNotice } from './ReviewEligibilityNotice';
 
 interface Props {
   filters: Filters;
@@ -57,6 +58,7 @@ export function Epics({ filters, viewer, refreshSignal, onSummaryChange }: Props
   function saved() { client.removeQueries({ queryKey: ['jira-epics'] }); void client.invalidateQueries({ queryKey: ['jira-config'] }); }
   function retryJira() { clearedRefresh.current = -1; void lookup.refetch(); }
   return <div className="space-y-6">
+    {filters.canReview && <ReviewEligibilityNotice entries={entries} />}
     <div className="flex flex-wrap items-center gap-3 text-sm">
       <h2 className="font-semibold">Pull requests by epic</h2>
       {config.data?.configured && <span className="text-slate-500">{new URL(config.data.site).hostname}</span>}

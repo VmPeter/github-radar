@@ -79,10 +79,17 @@ export function FilterBar({ filters, onChange, viewerKnown }: FilterBarProps) {
         title="Show only PRs with failing checks or changes requested"
       />
       <Toggle
-        label="Needs review"
+        label="Awaiting review"
         active={filters.needsReview}
         onToggle={() => set({ needsReview: !filters.needsReview })}
         title="Show only open PRs still waiting on required reviewers"
+      />
+      <Toggle
+        label="Can review"
+        active={filters.canReview}
+        onToggle={() => set({ canReview: !filters.canReview })}
+        disabled={!viewerKnown}
+        title={viewerKnown ? "Your approval can help meet an unmet review requirement, or you were requested directly by name. Uncertain eligibility is shown separately." : "Set a token to identify yourself"}
       />
     </div>
   );

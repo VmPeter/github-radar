@@ -1,8 +1,9 @@
 import { getToken } from "./token.ts";
 import { githubRequest, GitHubApiError } from "./githubRequest.ts";
+import type { ReviewEligibility } from './reviewEligibility.ts';
 export { GitHubApiError } from "./githubRequest.ts";
 
-async function graphql<T>(query: string, variables: Record<string, unknown>, token?: string, signal?: AbortSignal, initial = false): Promise<T> {
+export async function graphql<T>(query: string, variables: Record<string, unknown>, token?: string, signal?: AbortSignal, initial = false): Promise<T> {
   const effectiveToken = token ?? getToken() ?? "";
   const json = await githubRequest<{ data?: T }>("https://api.github.com/graphql", {
     method: "POST",
@@ -48,6 +49,7 @@ export interface PullRequestNode {
   baseRefName: string;
   mergeable: MergeableState;
   reviewDecision: ReviewDecision;
+  reviewEligibility?: ReviewEligibility;
   additions: number;
   deletions: number;
   commits: {
@@ -117,6 +119,29 @@ const PR_FIELDS = `
 
 function teamSearch(owner: string, name: string, members: readonly string[]): string {
   return [`repo:${owner}/${name}`, "is:pr", "is:open", "sort:updated-desc", ...members.map(m => `author:${m}`)].join(" ");
+}
+
+// Only named requests qualify independently of the required approval rules.
+// https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests
+export async function fetchViewerReviewRequests(owner: string, name: string, token: string, signal?: AbortSignal, initial = false): Promise<Set<string>> {
+  const ids = new Set<string>();
+  let cursor: string | null = null;
+  do {
+    const data: { search: { issueCount: number; nodes: Array<{ id: string } | null>; pageInfo: { hasNextPage: boolean; endCursor: string | null } } } = await graphql(`
+      query ViewerReviewRequests($q: String!, $cursor: String) {
+        search(query: $q, type: ISSUE, first: 100, after: $cursor) {
+          issueCount nodes { ... on PullRequest { id } }
+          pageInfo { hasNextPage endCursor }
+        }
+      }`, { q: `repo:${owner}/${name} is:pr is:open user-review-requested:@me -author:@me`, cursor }, token, signal, initial);
+    if (data.search.issueCount > 1000) throw new GitHubApiError('Too many review requests to determine your reviews reliably; narrow the monitored repository.');
+    for (const node of data.search.nodes) if (node?.id) ids.add(node.id);
+    const page = data.search.pageInfo;
+    if (!page.hasNextPage) break;
+    if (!page.endCursor || page.endCursor === cursor) throw new GitHubApiError('Review request pagination did not advance.');
+    cursor = page.endCursor;
+  } while (true);
+  return ids;
 }
 
 export async function fetchPullRequestCounts(targets: readonly PullRequestCountTarget[], token: string, signal?: AbortSignal): Promise<Record<string, number>> {

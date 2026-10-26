@@ -6,6 +6,7 @@ import { useConfig } from "../config/configStore";
 import { matchesFilters, type Filters } from "../lib/filters";
 import { useCollapsedGroups } from "../lib/collapsedGroups";
 import { RepoSection } from "./RepoSection";
+import { ReviewEligibilityNotice } from './ReviewEligibilityNotice';
 
 interface DashboardProps {
   filters: Filters;
@@ -60,6 +61,7 @@ export function Dashboard({
 
   return (
     <div className="space-y-10">
+      {filters.canReview && <ReviewEligibilityNotice entries={entries} />}
       {groups.map((group) => {
         const collapsed = isCollapsed(group.name);
         const repoCount = group.repos.length;

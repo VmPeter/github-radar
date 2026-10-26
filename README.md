@@ -153,6 +153,12 @@ The list is truncated to everything **up to and including the first run that rea
 
 ## Status semantics
 
+**Can review** includes PRs where your approval can contribute to an unmet review requirement, **or** you have an outstanding request directly to your username. A team request alone does not qualify. Radar checks your repository access, effective organization/repository rules and classic branch protection, counted reviews, base-branch CODEOWNERS and required reviewing teams. It excludes drafts, your own PRs and already-counted approvals, unless directly requested again. Both Pull requests and Epics use the same filter, and existing saved personal-filter selections migrate automatically.
+
+This filter means your approval can help, not necessarily finish every review requirement. Last-push-only eligibility cannot be confirmed from the exposed GitHub data. Missing permissions, incomplete results, invalid CODEOWNERS and other unresolved cases show **Eligibility unknown** and are listed separately when the filter is active. Direct username requests remain visible even if rule lookup fails. Membership and rule caches reset each refresh; search indexing can briefly lag changed requests. Reading rules and private team membership may require additional token access; Radar never assumes membership when a lookup fails.
+
+CODEOWNERS uses [GitHub ownership rules](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners); reviewing-team file patterns follow [ruleset gitignore matching](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets).
+
 | Color | Meaning |
 | --- | --- |
 | green | Checks passing AND review approved |
